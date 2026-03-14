@@ -1,4 +1,4 @@
-# Battery Monitor — Enterprise
+# Battery Monitor
 > C++ WinAPI Core · pybind11 Bridge · Python WebSocket Server · HTML/JS Frontend
 
 ---
