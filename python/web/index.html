@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battery Monitor</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Top Bar ────────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M20 10.5v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 11v2M11 10v4M15 11v2" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>BATTERY<strong>MONITOR</strong></span>
+    </div>
+    <div class="conn-status" id="connStatus">
+      <span class="dot"></span>
+      <span id="connLabel">CONNECTING</span>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <button class="nav-btn active" data-view="dashboard">DASHBOARD</button>
+    <button class="nav-btn" data-view="analytics">ANALYTICS</button>
+    <button class="nav-btn" data-view="health">HEALTH</button>
+    <button class="nav-btn" data-view="viz3d">3D VIEW</button>
+    <button class="nav-btn" data-view="alerts">ALERTS <span class="alert-badge" id="alertBadge">0</span></button>
+  </nav>
+  <div class="topbar-right">
+    <div class="clock" id="clock"></div>
+    <button class="export-btn" id="exportBtn">⬇ EXPORT CSV</button>
+  </div>
+</header>
+
+<!-- ── Alert Banner ────────────────────────────────────────────────────────── -->
+<div class="alert-banner" id="alertBanner"></div>
+
+<!-- ── Views ──────────────────────────────────────────────────────────────── -->
+<main class="main-content">
+
+  <!-- ── DASHBOARD VIEW ─────────────────────────────────────────────────── -->
+  <section class="view active" id="view-dashboard">
+    <div class="dashboard-grid">
+
+      <!-- Big Battery Visual -->
+      <div class="card card-battery">
+        <div class="battery-visual-wrap">
+          <div class="battery-shell">
+            <div class="battery-fill" id="battFill"></div>
+            <div class="battery-glow" id="battGlow"></div>
+            <div class="battery-segments">
+              <div class="seg" style="--i:0"></div><div class="seg" style="--i:1"></div>
+              <div class="seg" style="--i:2"></div><div class="seg" style="--i:3"></div>
+              <div class="seg" style="--i:4"></div>
+            </div>
+            <div class="battery-pct" id="battPct">—%</div>
+          </div>
+          <div class="battery-tip"></div>
+        </div>
+        <div class="battery-status-row">
+          <span class="status-pill" id="statusPill">UNKNOWN</span>
+          <span class="status-eta" id="statusEta">—</span>
+        </div>
+      </div>
+
+      <!-- Metrics grid -->
+      <div class="card card-metrics">
+        <div class="metrics-grid">
+          <div class="metric">
+            <span class="metric-label">VOLTAGE</span>
+            <span class="metric-value" id="mVoltage">—</span>
+            <span class="metric-unit">V</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">CURRENT</span>
+            <span class="metric-value" id="mCurrent">—</span>
+            <span class="metric-unit">A</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">POWER</span>
+            <span class="metric-value" id="mPower">—</span>
+            <span class="metric-unit">W</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">TEMPERATURE</span>
+            <span class="metric-value" id="mTemp">—</span>
+            <span class="metric-unit">°C</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">HEALTH</span>
+            <span class="metric-value" id="mHealth">—</span>
+            <span class="metric-unit">%</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">CAPACITY</span>
+            <span class="metric-value" id="mCapacity">—</span>
+            <span class="metric-unit">mWh</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">RESISTANCE</span>
+            <span class="metric-value" id="mResistance">—</span>
+            <span class="metric-unit">mΩ</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">C-RATE</span>
+            <span class="metric-value" id="mCrate">—</span>
+            <span class="metric-unit">C</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">CYCLES</span>
+            <span class="metric-value" id="mCycles">—</span>
+            <span class="metric-unit"></span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">THERMAL RISK</span>
+            <span class="metric-value" id="mThermal">—</span>
+            <span class="metric-unit">/100</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">EFFICIENCY</span>
+            <span class="metric-value" id="mEfficiency">—</span>
+            <span class="metric-unit">%</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">ENERGY (SESSION)</span>
+            <span class="metric-value" id="mEnergy">—</span>
+            <span class="metric-unit">Wh</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realtime power chart -->
+      <div class="card card-chart card-power-chart">
+        <div class="card-header">REAL-TIME POWER <span class="card-sub">last 300s</span></div>
+        <canvas id="chartPower"></canvas>
+      </div>
+
+      <!-- Voltage chart -->
+      <div class="card card-chart card-voltage-chart">
+        <div class="card-header">VOLTAGE WAVEFORM <span class="card-sub">last 300s</span></div>
+        <canvas id="chartVoltage"></canvas>
+      </div>
+
+      <!-- Info panel -->
+      <div class="card card-info">
+        <div class="card-header">DEVICE INFO</div>
+        <div class="info-row"><span>Name</span><span id="infoName">—</span></div>
+        <div class="info-row"><span>Manufacturer</span><span id="infoMfr">—</span></div>
+        <div class="info-row"><span>Serial</span><span id="infoSerial">—</span></div>
+        <div class="info-row"><span>Chemistry</span><span id="infoChem">—</span></div>
+        <div class="info-row"><span>Design Cap.</span><span id="infoDesign">—</span></div>
+        <div class="info-row"><span>Full Cap.</span><span id="infoFull">—</span></div>
+        <div class="info-row"><span>SoC (accurate)</span><span id="infoSoc">—</span></div>
+        <div class="info-row"><span>AC Online</span><span id="infoAc">—</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── ANALYTICS VIEW ──────────────────────────────────────────────────── -->
+  <section class="view" id="view-analytics">
+    <div class="analytics-grid">
+      <div class="card card-chart-full">
+        <div class="card-header">VOLTAGE vs CURRENT CORRELATION <span class="card-sub">scatter</span></div>
+        <canvas id="chartVIC"></canvas>
+      </div>
+      <div class="card card-chart-full">
+        <div class="card-header">TEMPERATURE OVER TIME <span class="card-sub">°C</span></div>
+        <canvas id="chartTemp"></canvas>
+      </div>
+      <div class="card card-chart-full">
+        <div class="card-header">CAPACITY TREND <span class="card-sub">mWh vs time</span></div>
+        <canvas id="chartCapacity"></canvas>
+      </div>
+      <div class="card card-chart-full">
+        <div class="card-header">DISCHARGE RATE HISTOGRAM</div>
+        <canvas id="chartHist"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HEALTH VIEW ─────────────────────────────────────────────────────── -->
+  <section class="view" id="view-health">
+    <div class="health-grid">
+      <div class="card card-health-score">
+        <div class="health-donut-wrap">
+          <canvas id="chartHealthDonut"></canvas>
+          <div class="health-center-text">
+            <span id="healthGrade">—</span>
+            <small id="healthPct">—%</small>
+          </div>
+        </div>
+        <h2 class="health-title">Battery Health Score</h2>
+      </div>
+      <div class="card card-health-metrics">
+        <div class="card-header">HEALTH METRICS</div>
+        <div class="health-bar-row">
+          <span>Capacity Retention</span>
+          <div class="hbar-track"><div class="hbar-fill" id="hbarRetention"></div></div>
+          <span id="hbarRetentionVal">—%</span>
+        </div>
+        <div class="health-bar-row">
+          <span>Thermal Score</span>
+          <div class="hbar-track"><div class="hbar-fill hbar-thermal" id="hbarThermal"></div></div>
+          <span id="hbarThermalVal">—</span>
+        </div>
+        <div class="health-bar-row">
+          <span>Resistance Score</span>
+          <div class="hbar-track"><div class="hbar-fill hbar-resist" id="hbarResist"></div></div>
+          <span id="hbarResistVal">—</span>
+        </div>
+        <div class="health-bar-row">
+          <span>Cycle Health</span>
+          <div class="hbar-track"><div class="hbar-fill hbar-cycle" id="hbarCycle"></div></div>
+          <span id="hbarCycleVal">—</span>
+        </div>
+        <div class="card-header" style="margin-top:1.5rem">PROJECTIONS</div>
+        <div class="info-row"><span>Est. Remaining Cycles</span><span id="hrCycles">—</span></div>
+        <div class="info-row"><span>Est. Life Remaining</span><span id="hrLife">—</span></div>
+        <div class="info-row"><span>Avg Power Draw</span><span id="hrAvgPower">—</span></div>
+        <div class="info-row"><span>Peak Temp (Session)</span><span id="hrMaxTemp">—</span></div>
+      </div>
+      <div class="card card-anomalies">
+        <div class="card-header">ANOMALY FLAGS</div>
+        <div id="anomalyList" class="anomaly-list"></div>
+      </div>
+      <div class="card card-chart-full">
+        <div class="card-header">HEALTH RADAR</div>
+        <canvas id="chartRadar"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3D VIEW ─────────────────────────────────────────────────────────── -->
+  <section class="view" id="view-viz3d">
+    <div class="viz3d-wrap">
+      <canvas id="canvas3d"></canvas>
+      <div class="viz3d-hud">
+        <div class="hud-panel">
+          <div class="hud-label">SOC</div>
+          <div class="hud-val" id="hud3dSoc">—%</div>
+        </div>
+        <div class="hud-panel">
+          <div class="hud-label">VOLTAGE</div>
+          <div class="hud-val" id="hud3dVolt">—V</div>
+        </div>
+        <div class="hud-panel">
+          <div class="hud-label">TEMP</div>
+          <div class="hud-val" id="hud3dTemp">—°C</div>
+        </div>
+        <div class="hud-panel">
+          <div class="hud-label">POWER</div>
+          <div class="hud-val" id="hud3dPower">—W</div>
+        </div>
+      </div>
+      <div class="viz3d-legend">
+        <span class="legend-item"><i style="background:var(--accent)"></i> Charge Level</span>
+        <span class="legend-item"><i style="background:#ff6b35"></i> Heat Zones</span>
+        <span class="legend-item"><i style="background:#4ecdc4"></i> Cell Voltage</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ALERTS VIEW ──────────────────────────────────────────────────────── -->
+  <section class="view" id="view-alerts">
+    <div class="alerts-layout">
+      <div class="card card-active-alerts">
+        <div class="card-header">ACTIVE ALERTS</div>
+        <div id="activeAlertsList" class="alerts-list"></div>
+      </div>
+      <div class="card card-alert-history">
+        <div class="card-header">ALERT HISTORY</div>
+        <div id="alertHistoryList" class="alerts-list"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/charts.js"></script>
+<script src="js/viz3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
