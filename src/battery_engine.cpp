@@ -1,5 +1,5 @@
 /**
- * Battery Monitor Engine - Enterprise C++ Core
+ * Battery Monitor Engine - C++ Core
  * Windows Battery Subsystem Interface via WMI, PDH, SetupAPI, DeviceIoControl
  * Real-time telemetry, health analytics, thermal modeling, predictive algorithms
  */
